@@ -1,25 +1,33 @@
 import discord
 import os
+import re
 import yt_dlp
 
 from discord import app_commands
 from discord.ext import commands
+from dotenv import load_dotenv
 from loguru import logger
 
-from src.tools import error_output
+from src.tools import error_output, youtube_palyer_output
+
+load_dotenv()
 
 
 class YotubePlayer(commands.Cog):
     def __init__(self, bot: commands.Bot) -> None:
         self.bot = bot
-        self.forbidden_char = ['/', '\\', ':',
-                               '*', '?', '"', '\'', '<', '>', '|']
+        self.forbidden_char = re.compile(r'[/\\:*?"\'<>|]')
         self.play_queue = []
         self.pause_flag = False
-        self.ffmpeg_path = './ffmpeg/bin/ffmpeg.exe'
+        self.ffmpeg_path = os.getenv('FFMPEG_PATH')
         self.song_path = './music_tmp/'
         self.cookie_path = './cookies.txt'
         self.volume = 0.1
+        self.ydl_opts_postprocessors = [{
+            'key': 'FFmpegExtractAudio',
+            'preferredcodec': 'mp3',
+            'preferredquality': '320',
+        }]
 
     @app_commands.command(name='join', description='加入語音頻道')
     async def join(self, interaction: discord.Interaction) -> None:
@@ -56,32 +64,110 @@ class YotubePlayer(commands.Cog):
                 await interaction.followup.send(embed=embed)
                 return
             if not self.bot.voice_clients[0].is_playing():
-                await interaction.followup.send(f'歌單已加入: 歌單URL為{youtube_url} 呦🌟 即將開始播放歌曲~')
-                title = self.play_queue[0]['title']
+                await interaction.followup.send(f'歌單已加入: 歌單URL為{youtube_url} 呦 即將開始播放歌曲~')
+                title = self.forbidden_char.sub(
+                    '_', self.play_queue[0]['title'])
                 url = self.play_queue[0]['url']
+                music_path = f'{self.song_path}{title}'
                 ydl_opts = {
                     'cookiefile': self.cookie_path,
                     'format': 'bestaudio/best',
-                    'outtmpl': f'{self.song_path}{title}',
-                    'postprocessors': [{
-                        'key': 'FFmpegExtractAudio',
-                        'preferredcodec': 'mp3',
-                    }],
+                    'outtmpl': music_path,
+                    'postprocessors': self.ydl_opts_postprocessors,
                 }
                 try:
                     with yt_dlp.YoutubeDL(ydl_opts) as ydl:
                         ydl.download([url])
-                except:
-                    for f in self.forbidden_char:
-                        title = title.replace(f, ' ')
-                    with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-                        ydl.download([url])
-                # self.bot.voice_clients[0].play(discord.PCMVolumeTransformer(discord.FFmpegPCMAudio(executable=self.ffmpeg_path, source=f'{
-                #                                self.song_path}{title}.mp3'), volume=self.volume), after=lambda _: self.after_song_interface(interaction))
+                except Exception as e:
+                    logger.error(e)
+                source = discord.PCMVolumeTransformer(discord.FFmpegPCMAudio(
+                    executable=self.ffmpeg_path, source=f'{music_path}.mp3'), volume=self.volume)
+                self.bot.voice_clients[0].play(
+                    source, after=lambda _: self.after_song_interface(interaction))
             else:
-                await interaction.followup.send(f'歌曲已加入排序: 歌單URL為{youtube_url} 呦🌟')
+                await interaction.followup.send(f'歌曲已加入排序: 歌單URL為{youtube_url}')
         else:
             await interaction.followup.send('未加入頻道')
+
+    def after_song_interface(self, interaction: discord.Interaction):
+        self.bot.loop.create_task(self.after_song(interaction))
+
+    async def after_song(self, interaction: discord.Interaction):
+        self.play_queue.pop(0)
+        self.clean(self)
+        if len(self.play_queue) > 0:
+            title = self.forbidden_char.sub('_', self.play_queue[0]['title'])
+            url = self.play_queue[0]['url']
+            music_path = f'{self.song_path}{title}'
+            ydl_opts = {
+                'cookiefile': self.cookie_path,
+                'format': 'bestaudio/best',
+                'outtmpl': music_path,
+                'postprocessors': self.ydl_opts_postprocessors,
+            }
+            try:
+                with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+                    ydl.download([url])
+            except Exception as e:
+                logger.error(e)
+            source = discord.PCMVolumeTransformer(discord.FFmpegPCMAudio(
+                executable=self.ffmpeg_path, source=f'{music_path}.mp3'), volume=self.volume)
+            self.bot.voice_clients[0].play(
+                source, after=lambda _: self.after_song_interface(interaction))
+        else:
+            self.clean(self)
+            await self.change_status(discord.Activity(
+                type=discord.ActivityType.watching, name='ご注文はうさぎですか？'))
+            logger.success('已播放完歌曲')
+            await interaction.followup.send('已播放完歌曲')
+
+    @app_commands.command(name='skip', description='跳過歌曲')
+    async def skip(self, interaction: discord.Interaction, count: int = 1) -> None:
+        await interaction.response.defer()
+        if len(self.bot.voice_clients[0]) != 0:
+            self.bot.voice_clients[0].stop()
+            if count > 1:
+                count -= 1
+                for _ in range(0, count):
+                    self.play_queue.pop(0)
+            await interaction.followup.send(embed=await youtube_palyer_output('歌曲已跳過'))
+
+        else:
+            await interaction.followup.send('我還沒加入語音頻道呦')
+
+    @app_commands.command(name='pause', description='暫停歌曲')
+    async def pause(self, interaction) -> None:
+        if self.bot.voice_clients[0].is_playing():
+            self.bot.voice_clients[0].pause()
+            self.pause_flag = True
+            await interaction.response.send_message(embed=await youtube_palyer_output('歌曲已暫停'))
+        else:
+            await interaction.response.send_message(embed=await youtube_palyer_output('沒有歌曲正在播放呦'))
+
+    @app_commands.command(name='resume', description='回復播放歌曲')
+    async def resume(self, interaction) -> None:
+        if self.bot.voice_clients[0].is_paused():
+            self.bot.voice_clients[0].resume()
+            self.pause_flag = False
+            await interaction.response.send_message(embed=await youtube_palyer_output('歌曲已繼續播放'))
+        else:
+            await interaction.response.send_message(embed=await youtube_palyer_output('沒有歌曲正在暫停呦'))
+
+    @app_commands.command(name='list', description='查詢歌曲清單')
+    async def list(self, interaction: discord.Interaction) -> None:
+        await interaction.response.defer()
+        if len(self.play_queue) == 0:
+            await interaction.followup.send("播放清單目前為空呦")
+        else:
+            playlist_check = f"```\n播放清單剩餘歌曲: {len(self.play_queue)}首\n"
+            for index, t in enumerate(self.play_queue, start=1):
+                playlist_check += f"{index}. {t['title']}\n"
+                if len(playlist_check) >= 500:
+                    playlist_check += " ...還有很多首"
+                    break
+            playlist_check += "```"
+            print(playlist_check)
+            await interaction.followup.send(playlist_check)
 
     async def get_details(self, youtube_url: str) -> None:
         ydl_opts = {
@@ -99,7 +185,7 @@ class YotubePlayer(commands.Cog):
                 song_details = [entry for entry in details.get(
                     'entries') if entry.get('title') not in {'[Deleted video]', '[Private video]'}]
             logger.info(str(
-                [map(lambda x: {'url': x.get('url'), 'title': x.get('title')}, song_details)]))
+                list([map(lambda x: {'url': x.get('url'), 'title': x.get('title')}, song_details)])))
             self.play_queue.extend(song_details)
 
     def url_format(self, youtube_url: str) -> str | None:
@@ -129,7 +215,7 @@ class YotubePlayer(commands.Cog):
     async def change_status(self, state) -> None:
         await self.bot.change_presence(activity=state, status=discord.Status.online)
 
-    def clean(self):
+    def clean(self, _):
         try:
             for file in os.scandir(self.song_path):
                 if file.path[-4:] == '.mp3':
