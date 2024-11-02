@@ -8,7 +8,7 @@ from discord.ext import commands
 from dotenv import load_dotenv
 from loguru import logger
 
-from src.tools import error_output, notice_output
+from src.tools import error_output, youtube_palyer_output
 
 load_dotenv()
 
@@ -53,7 +53,7 @@ class YotubePlayer(commands.Cog):
         await interaction.response.defer()
         youtube_url = self.url_format(youtube_url)
         if youtube_url == None:
-            await interaction.followup.send(embed=await notice_output('找不到歌曲喔'))
+            await interaction.followup.send(embed=await youtube_palyer_output('找不到歌曲喔'))
             return
         if await self.handle_connect(interaction):
             try:
@@ -135,25 +135,25 @@ class YotubePlayer(commands.Cog):
             count -= 1
             for _ in range(0, count):
                 self.play_queue.pop(0)
-        await interaction.followup.send(embed=await notice_output('歌曲已跳過'))
+        await interaction.followup.send(embed=await youtube_palyer_output('歌曲已跳過'))
 
     @app_commands.command(name='pause', description='暫停歌曲')
     async def pause(self, interaction) -> None:
         if self.bot.voice_clients[0].is_playing():
             self.bot.voice_clients[0].pause()
             self.pause_flag = True
-            await interaction.response.send_message(embed=await notice_output('歌曲已暫停'))
+            await interaction.response.send_message(embed=await youtube_palyer_output('歌曲已暫停'))
         else:
-            await interaction.response.send_message(embed=await notice_output('沒有歌曲正在播放呦'))
+            await interaction.response.send_message(embed=await youtube_palyer_output('沒有歌曲正在播放呦'))
 
     @app_commands.command(name='resume', description='回復播放歌曲')
     async def resume(self, interaction) -> None:
         if self.bot.voice_clients[0].is_paused():
             self.bot.voice_clients[0].resume()
             self.pause_flag = False
-            await interaction.response.send_message(embed=await notice_output('歌曲已繼續播放'))
+            await interaction.response.send_message(embed=await youtube_palyer_output('歌曲已繼續播放'))
         else:
-            await interaction.response.send_message(embed=await notice_output('沒有歌曲正在暫停呦'))
+            await interaction.response.send_message(embed=await youtube_palyer_output('沒有歌曲正在暫停呦'))
 
     @app_commands.command(name='list', description='查詢歌曲清單')
     async def list(self, interaction: discord.Interaction) -> None:
