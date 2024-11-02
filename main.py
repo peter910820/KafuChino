@@ -3,6 +3,7 @@ import os
 
 from discord.ext import commands
 from dotenv import load_dotenv
+from loguru import logger
 
 load_dotenv()
 
@@ -26,8 +27,8 @@ class KafuChino(commands.Bot):
 
     async def on_ready(self):
         delay_time = str(round(self.latency*1000, 2))
-        print(f'{self.user} is starting......')
-        print(f'{self.user} is online. delay time: {delay_time}ms.')
+        logger.success(f'{self.user} is starting......')
+        logger.success(f'{self.user} is online. delay time: {delay_time}ms.')
         status = discord.Activity(
             type=discord.ActivityType.watching, name='ご注文はうさぎですか？')
         await self.change_presence(status=discord.Status.online, activity=status)
