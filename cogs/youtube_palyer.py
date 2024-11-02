@@ -6,6 +6,8 @@ from discord import app_commands
 from discord.ext import commands
 from loguru import logger
 
+from src.tools import error_output
+
 
 class YotubePlayer(commands.Cog):
     def __init__(self, bot: commands.Bot) -> None:
@@ -49,8 +51,9 @@ class YotubePlayer(commands.Cog):
             try:
                 await self.get_details(youtube_url)
             except Exception as e:
-                print(f'❌error={e}❌')
-                await interaction.followup.send(f'❌意外狀況發生,請檢察log❌')
+                logger.error(e)
+                embed = await error_output(e)
+                await interaction.followup.send(embed=embed)
                 return
             if not self.bot.voice_clients[0].is_playing():
                 await interaction.followup.send(f'歌單已加入: 歌單URL為{youtube_url} 呦🌟 即將開始播放歌曲~')
