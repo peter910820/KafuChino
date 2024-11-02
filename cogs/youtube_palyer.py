@@ -25,13 +25,33 @@ class YotubePlayer(commands.Cog):
         elif len(self.bot.voice_clients) == 0:
             voiceChannel = interaction.user.voice.channel
             await voiceChannel.connect()
-            await self.change_status_music(discord.Activity(
-                type=discord.ActivityType.listening, name="Youtube"))
+            await self.change_status(discord.Activity(
+                type=discord.ActivityType.listening, name='Youtube'))
         else:
             await interaction.response.send_message('已加入頻道')
 
+    @app_commands.command(name="leave", description="離開語音頻道")
+    async def leave(self, interaction: discord.Interaction) -> None:
+        if len(self.bot.voice_clients) != 0:
+            await self.bot.voice_clients[0].disconnect()
+            self.play_queue = []
+            await self.change_status(discord.Activity(
+                type=discord.ActivityType.watching, name='ご注文はうさぎですか？'))
+            await interaction.response.send_message("已離開頻道~")
+        else:
+            await interaction.response.send_message("目前沒有在任何頻道!")
+        self.clean(self)
+
     async def change_status(self, state) -> None:
         await self.bot.change_presence(activity=state, status=discord.Status.online)
+
+    def clean(self):
+        try:
+            for file in os.scandir(self.song_path):
+                if file.path[-4:] == ".mp3":
+                    os.remove(file.path)
+        except PermissionError:
+            print("file is open now!")
 
 
 async def setup(bot: commands.Bot) -> None:
