@@ -32,9 +32,9 @@ class YotubePlayer(commands.Cog):
     @app_commands.command(name='join', description='加入語音頻道')
     async def join(self, interaction: discord.Interaction) -> None:
         if await self.handle_connect(interaction):
-            await interaction.response.send_message('已加入頻道')
+            await interaction.response.send_message(embed=await youtube_palyer_output('已加入頻道'))
         else:
-            await interaction.response.send_message('未加入頻道')
+            await interaction.response.send_message(embed=await youtube_palyer_output('未加入頻道'))
 
     @app_commands.command(name='leave', description='離開語音頻道')
     async def leave(self, interaction: discord.Interaction) -> None:
