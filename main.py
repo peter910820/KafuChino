@@ -14,10 +14,12 @@ class KafuChino(commands.Bot):
     def __init__(self):
         super().__init__(
             command_prefix='$',
-            intents=intents
+            intents=intents,
+            owner_id=os.getenv('BOT_OWNER')
         )
 
     async def setup_hook(self):
+        await self.load_extension('cogs.manage')
         await self.load_extension('cogs.general')
         await bot.tree.sync(guild=None)
 
