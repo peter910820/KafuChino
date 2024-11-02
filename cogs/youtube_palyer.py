@@ -38,14 +38,14 @@ class YotubePlayer(commands.Cog):
 
     @app_commands.command(name='leave', description='離開語音頻道')
     async def leave(self, interaction: discord.Interaction) -> None:
-        if len(self.bot.voice_clients) != 0:
+        if await self.handle_connect(interaction):  # 沒有在頻道的時候會進去再退出，超好笑
             await self.bot.voice_clients[0].disconnect()
             self.play_queue = []
+            await interaction.response.send_message(embed=await youtube_palyer_output('離開語音頻道成功'))
             await self.change_status(discord.Activity(
                 type=discord.ActivityType.watching, name='ご注文はうさぎですか？'))
-            await interaction.response.send_message('已離開頻道~')
         else:
-            await interaction.response.send_message('目前沒有在任何頻道!')
+            await interaction.response.send_message(embed=await youtube_palyer_output('使用者未加入語音頻道'))
         self.clean(self)
 
     @app_commands.command(name='play', description='播放YT音樂')
@@ -144,7 +144,7 @@ class YotubePlayer(commands.Cog):
             self.pause_flag = True
             await interaction.response.send_message(embed=await youtube_palyer_output('歌曲已暫停'))
         else:
-            await interaction.response.send_message(embed=await youtube_palyer_output('沒有歌曲正在播放呦'))
+            await interaction.response.send_message(embed=await youtube_palyer_output('沒有歌曲正在播放'))
 
     @app_commands.command(name='resume', description='回復播放歌曲')
     async def resume(self, interaction) -> None:
@@ -153,23 +153,22 @@ class YotubePlayer(commands.Cog):
             self.pause_flag = False
             await interaction.response.send_message(embed=await youtube_palyer_output('歌曲已繼續播放'))
         else:
-            await interaction.response.send_message(embed=await youtube_palyer_output('沒有歌曲正在暫停呦'))
+            await interaction.response.send_message(embed=await youtube_palyer_output('沒有歌曲正在暫停'))
 
     @app_commands.command(name='list', description='查詢歌曲清單')
     async def list(self, interaction: discord.Interaction) -> None:
         await interaction.response.defer()
         if len(self.play_queue) == 0:
-            await interaction.followup.send("播放清單目前為空呦")
+            await interaction.followup.send(embed=await youtube_palyer_output('播放清單目前為空呦'))
         else:
-            playlist_check = f"```\n播放清單剩餘歌曲: {len(self.play_queue)}首\n"
+            display = f'播放清單剩餘歌曲: {len(self.play_queue)}首\n :arrow_forward: '
             for index, t in enumerate(self.play_queue, start=1):
-                playlist_check += f"{index}. {t['title']}\n"
-                if len(playlist_check) >= 500:
-                    playlist_check += " ...還有很多首"
+                display += f'{index}. {t["title"]}\n'
+                if len(display) >= 500:
+                    display += ' ...還有很多首'
                     break
-            playlist_check += "```"
-            print(playlist_check)
-            await interaction.followup.send(playlist_check)
+            logger.info(display)
+            await interaction.followup.send(embed=await youtube_palyer_output(display))
 
     async def get_details(self, youtube_url: str) -> None:
         ydl_opts = {
