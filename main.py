@@ -23,6 +23,7 @@ class KafuChino(commands.Bot):
         # This feature to slash command has an error
         # await self.load_extension('cogs.manage')
         await self.load_extension('cogs.general')
+        await self.load_extension('cogs.owner')
         await self.load_extension('cogs.youtube_palyer')
         await bot.tree.sync(guild=None)
 
