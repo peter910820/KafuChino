@@ -11,6 +11,8 @@ async def error_output(error_message):
 async def youtube_palyer_output(youtube_palyer_message):
     embed = discord.Embed(
         title='YT-PLAYER', description='youtube_palyer message', color=discord.colour.Colour.red())
+    embed.set_thumbnail(
+        url='https://cdn.iconscout.com/icon/free/png-512/free-youtube-logo-icon-download-in-svg-png-gif-file-formats--social-media-70-flat-icons-color-pack-logos-432560.png?f=webp&w=256')
     embed.add_field(name='Notice', value=youtube_palyer_message)
     return embed
 
