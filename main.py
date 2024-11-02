@@ -19,7 +19,8 @@ class KafuChino(commands.Bot):
         )
 
     async def setup_hook(self):
-        await self.load_extension('cogs.manage')
+        # This feature to slash command has an error
+        # await self.load_extension('cogs.manage')
         await self.load_extension('cogs.general')
         await bot.tree.sync(guild=None)
 
