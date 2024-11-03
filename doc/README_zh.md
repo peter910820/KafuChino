@@ -12,13 +12,13 @@
 ---
 | [English](/) | [繁體中文](./doc/README_zh.md) |  
 
-This project is a music bot for discord, evolved from previous versions:  
+這是一個Discord的音樂機器人，從前面這幾個版本演化而來:  
 
 [SuouYuki](https://github.com/peter910820/SuouYuki) 
 [NikaidoShinku](https://github.com/peter910820/NikaidoShinku) 
 [KirimaSharo](.https://github.com/peter910820/KirimaSharo) 
 
-## Installation & Use 
+## 下載 & 使用 
 ```bash
 git clone https://github.com/peter910820/KafuChino.git
 cd ./KafuChino/
@@ -26,7 +26,7 @@ pip install -r requirements.txt
 ```  
 
 > [TODO]  
-> - [ ] change YT-PLAYER embed output thumbnail to music thumbnail when music play
-> - [ ] change presence when music change  
+> - [ ] 更改YT-PLAYER顯示時的圖片為當前歌曲
+> - [ ] 讓機器人個人狀態可以根據當前的歌曲改變
 
 [![licensebuttons by-nc-sa](https://licensebuttons.net/l/by-nc-sa/3.0/88x31.png)](https://creativecommons.org/licenses/by-nc-sa/4.0)
