@@ -3,7 +3,7 @@ import discord
 
 async def error_output(error_message):
     embed = discord.Embed(
-        title='ERROR', description='An error has occurred', color=discord.colour.Colour.magenta())
+        title='ERROR', description='An error has occurred!', color=discord.colour.Colour.magenta())
     embed.add_field(name='Error content', value=error_message)
     return embed
 
