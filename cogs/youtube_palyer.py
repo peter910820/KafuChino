@@ -242,8 +242,8 @@ class YotubePlayer(commands.Cog):
             case _:
                 logger.critical("A unknown error has occurred!")
 
-    async def change_status(self, state) -> None:
-        await self.bot.change_presence(activity=state, status=discord.Status.online)
+    async def change_status(self, act) -> None:
+        await self.bot.change_presence(activity=act, status=discord.Status.online)
 
     def clean(self, _: discord.Interaction):
         try:
