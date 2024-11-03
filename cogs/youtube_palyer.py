@@ -1,3 +1,4 @@
+import asyncio
 import discord
 import os
 import re
@@ -61,8 +62,7 @@ class YotubePlayer(commands.Cog):
                 await self.get_details(youtube_url)
             except Exception as e:
                 logger.error(e)
-                embed = await error_output(e)
-                await interaction.followup.send(embed=embed)
+                await interaction.followup.send(embed=await error_output(e))
                 return
             if not self.bot.voice_clients[0].is_playing():
                 await interaction.followup.send(embed=await youtube_palyer_output(f'歌曲/單已加入: 加入網址為{youtube_url} 即將開始播放歌曲~'))
@@ -116,7 +116,6 @@ class YotubePlayer(commands.Cog):
             self.bot.voice_clients[0].play(
                 source, after=lambda _: self.after_song_interface(interaction))
         else:
-            self.clean(self)
             await self.change_status(discord.Activity(
                 type=discord.ActivityType.watching, name='ご注文はうさぎですか？'))
             logger.success('已播放完歌曲')
@@ -125,17 +124,17 @@ class YotubePlayer(commands.Cog):
     @app_commands.command(name='skip', description='跳過歌曲')
     async def skip(self, interaction: discord.Interaction, count: int = 1) -> None:
         await interaction.response.defer()
-        if len(self.play_queue) != 0:
-            self.bot.voice_clients[0].stop()
-        else:
-            await interaction.followup.send('我還沒加入語音頻道呦')
-            return
         if count > 1:
             if count > len(self.play_queue):
                 count = len(self.play_queue)
             count -= 1
             for _ in range(0, count):
                 self.play_queue.pop(0)
+        if len(self.play_queue) != 0:
+            self.bot.voice_clients[0].stop()
+        else:
+            await interaction.followup.send('我還沒加入語音頻道呦')
+            return
         await interaction.followup.send(embed=await youtube_palyer_output('歌曲已跳過'))
 
     @app_commands.command(name='pause', description='暫停歌曲')
@@ -172,8 +171,12 @@ class YotubePlayer(commands.Cog):
                     with yt_dlp.YoutubeDL(self.get_details_options) as ydl:
                         details = ydl.extract_info(youtube_url, download=False)
                         if details.get('entries') == None:  # check if not a playlist
-                            self.play_queue.insert(1, {details})
-                        logger.info(self.play_queue[1])
+                            self.play_queue.insert(
+                                1, {'url': youtube_url, 'title': details.get('title')})
+                            logger.info(self.play_queue[1])
+                        else:
+                            logger.warning('不支援歌單插入')
+                            await interaction.followup.send(embed=await youtube_palyer_output('不支援歌單插入'))
                 except Exception as e:
                     logger.error(e)
             else:
@@ -183,13 +186,13 @@ class YotubePlayer(commands.Cog):
     async def list(self, interaction: discord.Interaction) -> None:
         await interaction.response.defer()
         if len(self.play_queue) == 0:
-            await interaction.followup.send(embed=await youtube_palyer_output('播放清單目前為空呦'))
+            await interaction.followup.send(embed=await youtube_palyer_output('播放清單目前為空'))
         else:
             display = f'播放清單剩餘歌曲: {len(self.play_queue)}首\n :arrow_forward: '
             for index, t in enumerate(self.play_queue, start=1):
-                display += f'{index}. {t["title"]}\n'
+                display += f'{index}. _{t["title"]}_\n'
                 if len(display) >= 500:
-                    display += ' ...還有很多首'
+                    display += '\n...還有很多首'
                     break
             logger.info(display)
             await interaction.followup.send(embed=await youtube_palyer_output(display))
@@ -198,8 +201,11 @@ class YotubePlayer(commands.Cog):
         with yt_dlp.YoutubeDL(self.get_details_options) as ydl:
             details = ydl.extract_info(youtube_url, download=False)
             if details.get('entries') == None:  # check if not a playlist
-                song_details = [
-                    {'url': youtube_url, 'title': details.get('title')}]
+                if details.get('title') not in {'[Deleted video]', '[Private video]'}:
+                    song_details = [
+                        {'url': youtube_url, 'title': details.get('title')}]
+                else:
+                    raise ValueError('該網址沒有影片/音樂')
             else:
                 song_details = [entry for entry in details.get(
                     'entries') if entry.get('title') not in {'[Deleted video]', '[Private video]'}]
@@ -208,6 +214,8 @@ class YotubePlayer(commands.Cog):
             self.play_queue.extend(song_details)
 
     def url_format(self, youtube_url: str) -> str | None:
+        if '&list=' in youtube_url:
+            youtube_url = youtube_url[0:youtube_url.find('&list=')]
         if youtube_url.startswith(('https://www.youtube.com/', 'https://youtube.com/', 'https://youtu.be/')):
             return youtube_url
         elif youtube_url.startswith('https://music.youtube.com/'):
@@ -229,9 +237,10 @@ class YotubePlayer(commands.Cog):
                     return False if command == 'join' else True
             case 'leave':
                 if len(self.bot.voice_clients) != 0:
+                    self.play_queue = [self.play_queue[0]]
+                    self.bot.voice_clients[0].stop()
+                    await asyncio.sleep(1)  # Ensures the stop is complete
                     await self.bot.voice_clients[0].disconnect()
-                    self.play_queue = []
-                    self.clean(self)
                     await self.change_status(discord.Activity(
                         type=discord.ActivityType.watching, name='ご注文はうさぎですか？'))
                     return True
@@ -240,7 +249,7 @@ class YotubePlayer(commands.Cog):
             case 'insert':
                 return True if len(self.bot.voice_clients) != 0 else False
             case _:
-                logger.critical("A unknown error has occurred!")
+                logger.critical('A unknown error has occurred!')
 
     async def change_status(self, act) -> None:
         await self.bot.change_presence(activity=act, status=discord.Status.online)
