@@ -217,7 +217,7 @@ class YotubePlayer(commands.Cog):
 
     async def handle_connect(self, interaction: discord.Interaction, command: str) -> bool:
         match command:
-            case 'join':
+            case 'join' | 'play':
                 if len(self.bot.voice_clients) == 0:
                     if interaction.user.voice != None:
                         await interaction.user.voice.channel.connect()
@@ -226,7 +226,7 @@ class YotubePlayer(commands.Cog):
                         return True
                     return False
                 else:
-                    return False
+                    return False if command == 'join' else True
             case 'leave':
                 if len(self.bot.voice_clients) != 0:
                     await self.bot.voice_clients[0].disconnect()
@@ -237,7 +237,7 @@ class YotubePlayer(commands.Cog):
                     return True
                 else:
                     return False
-            case 'play' | 'insert':
+            case 'insert':
                 return True if len(self.bot.voice_clients) != 0 else False
             case _:
                 logger.critical("A unknown error has occurred!")
