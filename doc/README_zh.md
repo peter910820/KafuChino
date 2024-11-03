@@ -7,7 +7,7 @@
 
 ---
 
-![bot image](./doc/img/bot.png) 
+![bot image](./img/bot.png) 
 
 ---
 | [English](/) | [繁體中文](./doc/README_zh.md) |  
@@ -15,8 +15,10 @@
 這是一個Discord的音樂機器人，從前面這幾個版本演化而來:  
 
 [SuouYuki](https://github.com/peter910820/SuouYuki) 
+
 [NikaidoShinku](https://github.com/peter910820/NikaidoShinku) 
-[KirimaSharo](.https://github.com/peter910820/KirimaSharo) 
+
+[KirimaSharo](https://github.com/peter910820/KirimaSharo) 
 
 ## 下載 & 使用 
 ```bash
