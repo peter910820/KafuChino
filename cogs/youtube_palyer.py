@@ -216,15 +216,10 @@ class YotubePlayer(commands.Cog):
             self.play_queue.extend(song_details)
 
     def url_format(self, youtube_url: str) -> str | None:
-        if '&list=' in youtube_url:
-            youtube_url = youtube_url[0:youtube_url.find('&list=')]
-
-        if youtube_url.startswith('https://www.youtube.com/'):
+        if youtube_url.startswith(('https://www.youtube.com/', 'https://youtube.com/', 'https://youtu.be/')):
             return youtube_url
         elif youtube_url.startswith('https://music.youtube.com/'):
             return youtube_url.replace('music', 'www')
-        elif youtube_url.startswith('https://youtube.com/'):
-            return youtube_url.replace('https://youtube', 'https://www.youtube')
         else:
             return None
 

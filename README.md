@@ -9,3 +9,5 @@ git clone https://github.com/peter910820/KafuChino.git
 cd ./KafuChino/
 pip install -r requirements.txt
 ```
+> [!TODO]
+> 更改get_details獲取單曲資料的邏輯
