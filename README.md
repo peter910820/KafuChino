@@ -15,8 +15,10 @@
 This project is a music bot for discord, evolved from previous versions:  
 
 [SuouYuki](https://github.com/peter910820/SuouYuki) 
+
 [NikaidoShinku](https://github.com/peter910820/NikaidoShinku) 
-[KirimaSharo](.https://github.com/peter910820/KirimaSharo) 
+
+[KirimaSharo](https://github.com/peter910820/KirimaSharo) 
 
 ## Installation & Use 
 ```bash
