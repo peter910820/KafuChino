@@ -86,9 +86,9 @@ class YotubePlayer(commands.Cog):
                 self.bot.voice_clients[0].play(
                     source, after=lambda _: self.after_song_interface(interaction))
             else:
-                await interaction.followup.send(f'歌曲已加入排序: 歌單URL為{youtube_url}')
+                await interaction.followup.send(embed=await youtube_palyer_output(f'歌曲已加入排序: 加入網址為{youtube_url}'))
         else:
-            await interaction.followup.send('未加入頻道')
+            await interaction.followup.send(embed=await youtube_palyer_output('未加入頻道'))
 
     def after_song_interface(self, interaction: discord.Interaction):
         self.bot.loop.create_task(self.after_song(interaction))
