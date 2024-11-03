@@ -23,6 +23,12 @@ class YotubePlayer(commands.Cog):
         self.song_path = './music_tmp/'
         self.cookie_path = './cookies.txt'
         self.volume = 0.1
+        self.get_details_options = {
+            'cookiefile': self.cookie_path,
+            'extract_flat': True,  # dont download
+            'quiet': True,  # undisplay progress bar
+            'noplaylist': False,  # playlist
+        }
         self.ydl_opts_postprocessors = [{
             'key': 'FFmpegExtractAudio',
             'preferredcodec': 'mp3',
@@ -40,8 +46,6 @@ class YotubePlayer(commands.Cog):
     async def leave(self, interaction: discord.Interaction) -> None:
         if await self.handle_connect(interaction, 'leave'):
             await interaction.response.send_message(embed=await youtube_palyer_output('離開語音頻道成功'))
-            await self.change_status(discord.Activity(
-                type=discord.ActivityType.watching, name='ご注文はうさぎですか？'))
         else:
             await interaction.response.send_message(embed=await youtube_palyer_output('機器人未加入頻道'))
 
@@ -61,7 +65,7 @@ class YotubePlayer(commands.Cog):
                 await interaction.followup.send(embed=embed)
                 return
             if not self.bot.voice_clients[0].is_playing():
-                await interaction.followup.send(f'歌單已加入: 歌單URL為{youtube_url} 呦 即將開始播放歌曲~')
+                await interaction.followup.send(embed=await youtube_palyer_output(f'歌曲/單已加入: 加入網址為{youtube_url} 即將開始播放歌曲~'))
                 title = self.forbidden_char.sub(
                     '_', self.play_queue[0]['title'])
                 url = self.play_queue[0]['url']
@@ -116,7 +120,7 @@ class YotubePlayer(commands.Cog):
             await self.change_status(discord.Activity(
                 type=discord.ActivityType.watching, name='ご注文はうさぎですか？'))
             logger.success('已播放完歌曲')
-            await interaction.followup.send('已播放完歌曲')
+            await interaction.followup.send(embed=await youtube_palyer_output('已播放完歌曲'))
 
     @app_commands.command(name='skip', description='跳過歌曲')
     async def skip(self, interaction: discord.Interaction, count: int = 1) -> None:
@@ -165,13 +169,7 @@ class YotubePlayer(commands.Cog):
             if await self.handle_connect(interaction, 'insert'):
                 await interaction.followup.send(embed=await youtube_palyer_output('插入歌曲到下一首'))
                 try:
-                    ydl_opts = {
-                        'cookiefile': self.cookie_path,
-                        'extract_flat': True,  # dont download
-                        'quiet': True,  # undisplay progress bar
-                        'noplaylist': False,  # playlist
-                    }
-                    with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+                    with yt_dlp.YoutubeDL(self.get_details_options) as ydl:
                         details = ydl.extract_info(youtube_url, download=False)
                         if details.get('entries') == None:  # check if not a playlist
                             self.play_queue.insert(1, {details})
@@ -197,13 +195,7 @@ class YotubePlayer(commands.Cog):
             await interaction.followup.send(embed=await youtube_palyer_output(display))
 
     async def get_details(self, youtube_url: str) -> None:
-        ydl_opts = {
-            'cookiefile': self.cookie_path,
-            'extract_flat': True,  # dont download
-            'quiet': True,  # undisplay progress bar
-            'noplaylist': False,  # playlist
-        }
-        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+        with yt_dlp.YoutubeDL(self.get_details_options) as ydl:
             details = ydl.extract_info(youtube_url, download=False)
             if details.get('entries') == None:  # check if not a playlist
                 song_details = [
@@ -240,6 +232,8 @@ class YotubePlayer(commands.Cog):
                     await self.bot.voice_clients[0].disconnect()
                     self.play_queue = []
                     self.clean(self)
+                    await self.change_status(discord.Activity(
+                        type=discord.ActivityType.watching, name='ご注文はうさぎですか？'))
                     return True
                 else:
                     return False
@@ -251,7 +245,7 @@ class YotubePlayer(commands.Cog):
     async def change_status(self, state) -> None:
         await self.bot.change_presence(activity=state, status=discord.Status.online)
 
-    def clean(self, _):
+    def clean(self, _: discord.Interaction):
         try:
             for file in os.scandir(self.song_path):
                 if file.path[-4:] == '.mp3':
