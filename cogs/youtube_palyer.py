@@ -31,22 +31,19 @@ class YotubePlayer(commands.Cog):
 
     @app_commands.command(name='join', description='加入語音頻道')
     async def join(self, interaction: discord.Interaction) -> None:
-        if await self.handle_connect(interaction):
+        if await self.handle_connect(interaction, 'join'):
             await interaction.response.send_message(embed=await youtube_palyer_output('已加入頻道'))
         else:
-            await interaction.response.send_message(embed=await youtube_palyer_output('未加入頻道'))
+            await interaction.response.send_message(embed=await youtube_palyer_output('加入頻道失敗，請確保使用者在語音頻道內且機器人不在其他語音頻道'))
 
     @app_commands.command(name='leave', description='離開語音頻道')
     async def leave(self, interaction: discord.Interaction) -> None:
-        if await self.handle_connect(interaction):  # 沒有在頻道的時候會進去再退出，超好笑
-            await self.bot.voice_clients[0].disconnect()
-            self.play_queue = []
+        if await self.handle_connect(interaction, 'leave'):
             await interaction.response.send_message(embed=await youtube_palyer_output('離開語音頻道成功'))
             await self.change_status(discord.Activity(
                 type=discord.ActivityType.watching, name='ご注文はうさぎですか？'))
         else:
-            await interaction.response.send_message(embed=await youtube_palyer_output('使用者未加入語音頻道'))
-        self.clean(self)
+            await interaction.response.send_message(embed=await youtube_palyer_output('機器人未加入頻道'))
 
     @app_commands.command(name='play', description='播放YT音樂')
     async def play(self, interaction: discord.Interaction, youtube_url: str) -> None:
@@ -55,7 +52,7 @@ class YotubePlayer(commands.Cog):
         if youtube_url == None:
             await interaction.followup.send(embed=await youtube_palyer_output('找不到歌曲喔'))
             return
-        if await self.handle_connect(interaction):
+        if await self.handle_connect(interaction, 'play'):
             try:
                 await self.get_details(youtube_url)
             except Exception as e:
@@ -155,6 +152,35 @@ class YotubePlayer(commands.Cog):
         else:
             await interaction.response.send_message(embed=await youtube_palyer_output('沒有歌曲正在暫停'))
 
+    @app_commands.command(name='insert', description='插入歌曲到下一首')
+    async def insert(self, interaction: discord.Interaction, youtube_url: str) -> None:
+        await interaction.response.defer()
+        youtube_url = self.url_format(youtube_url)
+        if youtube_url.startswith('https://www.youtube.com/playlist?list='):
+            await interaction.followup.send(embed=await youtube_palyer_output('此功能不支援清單插入呦'))
+            return
+        elif not youtube_url.startswith('https://www.youtube.com/'):
+            await interaction.followup.send(embed=await youtube_palyer_output('找不到歌曲呦'))
+        else:
+            if await self.handle_connect(interaction, 'insert'):
+                await interaction.followup.send(embed=await youtube_palyer_output('插入歌曲到下一首'))
+                try:
+                    ydl_opts = {
+                        'cookiefile': self.cookie_path,
+                        'extract_flat': True,  # dont download
+                        'quiet': True,  # undisplay progress bar
+                        'noplaylist': False,  # playlist
+                    }
+                    with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+                        details = ydl.extract_info(youtube_url, download=False)
+                        if details.get('entries') == None:  # check if not a playlist
+                            self.play_queue.insert(1, {details})
+                        logger.info(self.play_queue[1])
+                except Exception as e:
+                    logger.error(e)
+            else:
+                await interaction.followup.send(embed=await youtube_palyer_output('機器人未加入頻道'))
+
     @app_commands.command(name='list', description='查詢歌曲清單')
     async def list(self, interaction: discord.Interaction) -> None:
         await interaction.response.defer()
@@ -202,16 +228,30 @@ class YotubePlayer(commands.Cog):
         else:
             return None
 
-    async def handle_connect(self, interaction: discord.Interaction) -> bool:
-        if interaction.user.voice == None:
-            return False
-        elif len(self.bot.voice_clients) == 0:
-            await interaction.user.voice.channel.connect()
-            await self.change_status(discord.Activity(
-                type=discord.ActivityType.listening, name='Youtube'))
-            return True
-        else:
-            return True
+    async def handle_connect(self, interaction: discord.Interaction, command: str) -> bool:
+        match command:
+            case 'join':
+                if len(self.bot.voice_clients) == 0:
+                    if interaction.user.voice != None:
+                        await interaction.user.voice.channel.connect()
+                        await self.change_status(discord.Activity(
+                            type=discord.ActivityType.listening, name='Youtube'))
+                        return True
+                    return False
+                else:
+                    return False
+            case 'leave':
+                if len(self.bot.voice_clients) != 0:
+                    await self.bot.voice_clients[0].disconnect()
+                    self.play_queue = []
+                    self.clean(self)
+                    return True
+                else:
+                    return False
+            case 'play' | 'insert':
+                return True if len(self.bot.voice_clients) != 0 else False
+            case _:
+                logger.critical("A unknown error has occurred!")
 
     async def change_status(self, state) -> None:
         await self.bot.change_presence(activity=state, status=discord.Status.online)
