@@ -26,7 +26,14 @@ git clone https://github.com/peter910820/KafuChino.git
 cd ./KafuChino/
 pip install -r requirements.txt
 ```  
-
+Fill in the relevant parameters according to the **.env.example** file  
+```bash
+python main.py
+```  
+Or you can use **nohup** to let it execute in the background:  
+```bash
+nohup python main.py &
+```  
 > [TODO]  
 > - [ ] change YT-PLAYER embed output thumbnail to music thumbnail when music play
 > - [ ] change presence when music change  

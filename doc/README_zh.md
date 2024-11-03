@@ -26,7 +26,14 @@ git clone https://github.com/peter910820/KafuChino.git
 cd ./KafuChino/
 pip install -r requirements.txt
 ```  
-
+根據 **.env.example** 檔案填入相關參數  
+```bash
+python main.py
+```  
+也可以使用nohup讓他在背景執行:  
+```bash
+nohup python main.py &
+```  
 > [TODO]  
 > - [ ] 更改YT-PLAYER顯示時的圖片為當前歌曲
 > - [ ] 讓機器人個人狀態可以根據當前的歌曲改變
