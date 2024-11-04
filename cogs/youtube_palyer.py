@@ -17,7 +17,7 @@ load_dotenv()
 class YotubePlayer(commands.Cog):
     def __init__(self, bot: commands.Bot) -> None:
         self.bot = bot
-        self.forbidden_char = re.compile(r'[/\\:*?"\'<>|]')
+        self.forbidden_char = re.compile(r'[/\\:*?"\'<>|\.]')
         self.play_queue = []
         self.pause_flag = False
         self.ffmpeg_path = os.getenv('FFMPEG_PATH')
@@ -84,18 +84,32 @@ class YotubePlayer(commands.Cog):
                 source = discord.PCMVolumeTransformer(discord.FFmpegPCMAudio(
                     executable=self.ffmpeg_path, source=f'{music_path}.mp3'), volume=self.volume)
                 self.bot.voice_clients[0].play(
-                    source, after=lambda _: self.after_song_interface(interaction))
+                    source, after=lambda error: self.after_song_interface(
+                        interaction, error)
+                )
             else:
                 await interaction.followup.send(embed=await youtube_palyer_output(f'歌曲已加入排序: 加入網址為{youtube_url}'))
         else:
             await interaction.followup.send(embed=await youtube_palyer_output('未加入頻道'))
 
-    def after_song_interface(self, interaction: discord.Interaction):
-        self.bot.loop.create_task(self.after_song(interaction))
+    def after_song_interface(self, interaction: discord.Interaction, error: Exception):
+        if error:
+            logger.error(str(error))
+        else:
+            logger.debug(str(error))
+            self.bot.loop.create_task(self.after_song(interaction))
 
     async def after_song(self, interaction: discord.Interaction):
         self.play_queue.pop(0)
-        self.clean(self)
+        if self.clean(self) == 1:
+            await interaction.followup.send(embed=await youtube_palyer_output('正在嘗試重連...'))
+            await asyncio.sleep(3)
+            if len(self.play_queue) == 0:
+                logger.warning('Reconnection failed, bot is ready to exit...')
+                self.play_queue = []
+                self.clean(self)
+                await interaction.followup.send(embed=await youtube_palyer_output('機器人回應過長，請稍後再使用'))
+                return
         if len(self.play_queue) > 0:
             title = self.forbidden_char.sub('_', self.play_queue[0]['title'])
             url = self.play_queue[0]['url']
@@ -114,7 +128,9 @@ class YotubePlayer(commands.Cog):
             source = discord.PCMVolumeTransformer(discord.FFmpegPCMAudio(
                 executable=self.ffmpeg_path, source=f'{music_path}.mp3'), volume=self.volume)
             self.bot.voice_clients[0].play(
-                source, after=lambda _: self.after_song_interface(interaction))
+                source, after=lambda error: self.after_song_interface(
+                    interaction, error)
+            )
         else:
             await self.change_status(discord.Activity(
                 type=discord.ActivityType.watching, name='ご注文はうさぎですか？'))
@@ -254,13 +270,16 @@ class YotubePlayer(commands.Cog):
     async def change_status(self, act) -> None:
         await self.bot.change_presence(activity=act, status=discord.Status.online)
 
-    def clean(self, _: discord.Interaction):
+    def clean(self, _: discord.Interaction) -> int:
         try:
             for file in os.scandir(self.song_path):
                 if file.path[-4:] == '.mp3':
                     os.remove(file.path)
-        except PermissionError:
-            logger.error('file is open!')
+        except PermissionError as e:
+            logger.error(e)
+            logger.error('ffmpeg is possible that there is no normal exit!')
+            return 1
+        return 0
 
 
 async def setup(bot: commands.Bot) -> None:
