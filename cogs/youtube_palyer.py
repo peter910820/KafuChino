@@ -37,6 +37,36 @@ class YotubePlayer(commands.Cog):
             'preferredquality': '320',
         }]
 
+    async def check_owner(self, interaction: discord.Interaction) -> bool:
+        if str(interaction.user.id) != str(self.bot.owner_id):
+            await interaction.response.send_message(embed=await youtube_palyer_output('Only bot owner can use this command!'), ephemeral=True)
+            return False
+        return True
+
+    @app_commands.command(name='youtube_palyer_search', description='Return specified internal class variable for youtube_palyer cog(owner only)')
+    @app_commands.describe(c_var='Class variable name.')
+    @app_commands.choices(c_var=[
+        app_commands.Choice(name='channel_id', value='channel_id'),
+        app_commands.Choice(name='volume', value='volume'),
+        app_commands.Choice(name='get_details_options',
+                            value='get_details_options'),
+        app_commands.Choice(name='ydl_opts_postprocessors',
+                            value='ydl_opts_postprocessors'),
+    ])
+    async def youtube_palyer_search(self, interaction: discord.Interaction, c_var: str) -> None:
+        if not await self.check_owner(interaction):
+            return
+        match c_var:
+            case 'channel_id':
+                c_var_value = self.channel_id
+            case 'volume':
+                c_var_value = self.volume
+            case 'get_details_options':
+                c_var_value = self.get_details_options
+            case 'ydl_opts_postprocessors':
+                c_var_value = self.ydl_opts_postprocessors
+        await interaction.response.send_message(embed=await youtube_palyer_output(str(c_var_value)))
+
     @app_commands.command(name='join', description='加入語音頻道')
     async def join(self, interaction: discord.Interaction) -> None:
         if await self.handle_connect(interaction, 'join'):
@@ -110,6 +140,7 @@ class YotubePlayer(commands.Cog):
             self.play_queue = []
             self.clean(self)
             await self.bot.get_channel(self.channel_id[0]).send(embed=await youtube_palyer_output('機器人連線失敗，請稍後再使用'))
+            self.channel_id = []
             return
         if len(self.play_queue) > 0:
             title = self.forbidden_char.sub('_', self.play_queue[0]['title'])
@@ -137,6 +168,7 @@ class YotubePlayer(commands.Cog):
                 type=discord.ActivityType.watching, name='ご注文はうさぎですか？'))
             logger.success('已播放完歌曲')
             await self.bot.get_channel(self.channel_id[0]).send(embed=await youtube_palyer_output('已播放完歌曲'))
+            self.channel_id = []
 
     @app_commands.command(name='skip', description='跳過歌曲')
     async def skip(self, interaction: discord.Interaction, count: int = 1) -> None:
@@ -261,6 +293,7 @@ class YotubePlayer(commands.Cog):
                     await self.bot.voice_clients[0].disconnect()
                     await self.change_status(discord.Activity(
                         type=discord.ActivityType.watching, name='ご注文はうさぎですか？'))
+                    self.channel_id = []
                     return True
                 else:
                     return False
