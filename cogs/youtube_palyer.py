@@ -19,6 +19,7 @@ class YotubePlayer(commands.Cog):
         self.bot = bot
         self.forbidden_char = re.compile(r'[/\\:*?"\'<>|\.]')
         self.play_queue = []
+        self.channel_id = []
         self.pause_flag = False
         self.ffmpeg_path = os.getenv('FFMPEG_PATH')
         self.song_path = './music_tmp/'
@@ -102,14 +103,14 @@ class YotubePlayer(commands.Cog):
     async def after_song(self, interaction: discord.Interaction):
         self.play_queue.pop(0)
         if self.clean(self) == 1:
-            await interaction.followup.send(embed=await youtube_palyer_output('正在嘗試重連...'))
+            await self.bot.get_channel(self.channel_id[0]).send(embed=await youtube_palyer_output('正在嘗試重連...'))
             await asyncio.sleep(3)
-            if len(self.play_queue) == 0:
-                logger.warning('Reconnection failed, bot is ready to exit...')
-                self.play_queue = []
-                self.clean(self)
-                await interaction.followup.send(embed=await youtube_palyer_output('機器人回應過長，請稍後再使用'))
-                return
+        if len(self.bot.voice_clients) == 0:
+            logger.warning('Reconnection failed, bot is ready to exit...')
+            self.play_queue = []
+            self.clean(self)
+            await self.bot.get_channel(self.channel_id[0]).send(embed=await youtube_palyer_output('機器人連線失敗，請稍後再使用'))
+            return
         if len(self.play_queue) > 0:
             title = self.forbidden_char.sub('_', self.play_queue[0]['title'])
             url = self.play_queue[0]['url']
@@ -135,7 +136,7 @@ class YotubePlayer(commands.Cog):
             await self.change_status(discord.Activity(
                 type=discord.ActivityType.watching, name='ご注文はうさぎですか？'))
             logger.success('已播放完歌曲')
-            await interaction.followup.send(embed=await youtube_palyer_output('已播放完歌曲'))
+            await self.bot.get_channel(self.channel_id[0]).send(embed=await youtube_palyer_output('已播放完歌曲'))
 
     @app_commands.command(name='skip', description='跳過歌曲')
     async def skip(self, interaction: discord.Interaction, count: int = 1) -> None:
@@ -244,6 +245,7 @@ class YotubePlayer(commands.Cog):
             case 'join' | 'play':
                 if len(self.bot.voice_clients) == 0:
                     if interaction.user.voice != None:
+                        self.channel_id.append(interaction.channel_id)
                         await interaction.user.voice.channel.connect()
                         await self.change_status(discord.Activity(
                             type=discord.ActivityType.listening, name='Youtube'))
