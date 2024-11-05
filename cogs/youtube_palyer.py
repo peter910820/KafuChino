@@ -65,7 +65,7 @@ class YotubePlayer(commands.Cog):
                 c_var_value = self.get_details_options
             case 'ydl_opts_postprocessors':
                 c_var_value = self.ydl_opts_postprocessors
-        await interaction.response.send_message(embed=await youtube_palyer_output(str(c_var_value)))
+        await interaction.response.send_message(embed=await youtube_palyer_output(str(c_var_value)), ephemeral=True)
 
     @app_commands.command(name='join', description='加入語音頻道')
     async def join(self, interaction: discord.Interaction) -> None:
@@ -287,9 +287,11 @@ class YotubePlayer(commands.Cog):
                     return False if command == 'join' else True
             case 'leave':
                 if len(self.bot.voice_clients) != 0:
-                    self.play_queue = [self.play_queue[0]]
-                    self.bot.voice_clients[0].stop()
-                    await asyncio.sleep(1)  # Ensures the stop is complete
+                    # The song hasn’t finished playing yet
+                    if len(self.play_queue) != 0:
+                        self.play_queue = [self.play_queue[0]]
+                        self.bot.voice_clients[0].stop()
+                        await asyncio.sleep(1)  # Ensures the stop is complete
                     await self.bot.voice_clients[0].disconnect()
                     await self.change_status(discord.Activity(
                         type=discord.ActivityType.watching, name='ご注文はうさぎですか？'))
