@@ -68,8 +68,8 @@ class YotubePlayer(commands.Cog):
         await interaction.response.send_message(embed=await youtube_palyer_output(str(c_var_value)), ephemeral=True)
 
     @app_commands.command(name='join', description='加入語音頻道')
-    async def join(self, interaction: discord.Interaction) -> None:
-        if await self.handle_connect(interaction, 'join'):
+    async def join(self, interaction: discord.Interaction, channel_id: str = '0') -> None:
+        if await self.handle_connect(interaction, 'join', channel_id):
             await interaction.response.send_message(embed=await youtube_palyer_output('已加入頻道'))
         else:
             await interaction.response.send_message(embed=await youtube_palyer_output('加入頻道失敗，請確保使用者在語音頻道內且機器人不在其他語音頻道'))
@@ -82,13 +82,13 @@ class YotubePlayer(commands.Cog):
             await interaction.response.send_message(embed=await youtube_palyer_output('機器人未加入頻道'))
 
     @app_commands.command(name='play', description='播放YT音樂')
-    async def play(self, interaction: discord.Interaction, youtube_url: str) -> None:
+    async def play(self, interaction: discord.Interaction, youtube_url: str, channel_id: str = '0') -> None:
         await interaction.response.defer()
         youtube_url = self.url_format(youtube_url)
         if youtube_url == None:
             await interaction.followup.send(embed=await youtube_palyer_output('找不到歌曲喔'))
             return
-        if await self.handle_connect(interaction, 'play'):
+        if await self.handle_connect(interaction, 'play', channel_id):
             try:
                 await self.get_details(youtube_url)
             except Exception as e:
@@ -121,7 +121,7 @@ class YotubePlayer(commands.Cog):
             else:
                 await interaction.followup.send(embed=await youtube_palyer_output(f'歌曲已加入排序: 加入網址為{youtube_url}'))
         else:
-            await interaction.followup.send(embed=await youtube_palyer_output('未加入頻道'))
+            await interaction.followup.send(embed=await youtube_palyer_output('加入頻道失敗/未加入頻道'))
 
     def after_song_interface(self, interaction: discord.Interaction, error: Exception):
         if error:
@@ -272,13 +272,27 @@ class YotubePlayer(commands.Cog):
         else:
             return None
 
-    async def handle_connect(self, interaction: discord.Interaction, command: str) -> bool:
+    async def handle_connect(self, interaction: discord.Interaction, command: str, channel_id: str = '') -> bool:
         match command:
             case 'join' | 'play':
+                try:
+                    channel_id = int(channel_id)
+                except ValueError:
+                    logger.error('請輸入正確的channel_id!')
+                    return False
                 if len(self.bot.voice_clients) == 0:
                     if interaction.user.voice != None:
-                        self.channel_id.append(interaction.channel_id)
-                        await interaction.user.voice.channel.connect()
+                        if channel_id == 0:
+                            voice_channel = interaction.user.voice.channel
+                        else:
+                            voice_channel = self.bot.get_channel(channel_id)
+                        try:
+                            await voice_channel.connect()
+                        except Exception as e:
+                            logger.error(e)
+                            logger.warning('channel does not exists!')
+                            return False
+                        self.channel_id.append(channel_id)
                         await self.change_status(discord.Activity(
                             type=discord.ActivityType.listening, name='Youtube'))
                         return True
