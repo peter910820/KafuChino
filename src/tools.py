@@ -1,5 +1,7 @@
 import discord
 
+from loguru import logger
+
 
 async def error_output(error_message):
     embed = discord.Embed(
@@ -14,6 +16,17 @@ async def youtube_palyer_output(youtube_palyer_message):
     embed.set_thumbnail(
         url='https://cdn.iconscout.com/icon/free/png-512/free-youtube-logo-icon-download-in-svg-png-gif-file-formats--social-media-70-flat-icons-color-pack-logos-432560.png?f=webp&w=256')
     embed.add_field(name='Notice', value=youtube_palyer_message)
+    return embed
+
+
+async def youtube_palyer_notice_output(song_data):
+    embed = discord.Embed(
+        title='YT-PLAYER', description=f'現在正在播放{song_data["title"]}', color=discord.colour.Colour.red())
+    try:
+        embed.set_thumbnail(
+            url=song_data['thumbnails'][0]['url'])
+    except:
+        logger.warning('Setting thumbnail faild!')
     return embed
 
 
