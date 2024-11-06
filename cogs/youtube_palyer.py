@@ -118,6 +118,8 @@ class YotubePlayer(commands.Cog):
                     source, after=lambda error: self.after_song_interface(
                         interaction, error)
                 )
+                await self.change_status(discord.Activity(
+                    type=discord.ActivityType.listening, name=self.play_queue[0]['title']))
             else:
                 await interaction.followup.send(embed=await youtube_palyer_output(f'歌曲已加入排序: 加入網址為{youtube_url}'))
         else:
@@ -163,6 +165,8 @@ class YotubePlayer(commands.Cog):
                 source, after=lambda error: self.after_song_interface(
                     interaction, error)
             )
+            await self.change_status(discord.Activity(
+                type=discord.ActivityType.listening, name=self.play_queue[0]['title']))
         else:
             await self.change_status(discord.Activity(
                 type=discord.ActivityType.watching, name='ご注文はうさぎですか？'))
