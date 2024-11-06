@@ -35,7 +35,7 @@ Or you can use **nohup** to let it execute in the background:
 nohup python main.py &
 ```  
 > [TODO]  
-> - [ ] change YT-PLAYER embed output thumbnail to music thumbnail when music play
-> - [ ] change presence when music change  
+> - [X] change YT-PLAYER embed output thumbnail to music thumbnail when music play
+> - [X] change presence when music change  
 
 [![licensebuttons by-nc-sa](https://licensebuttons.net/l/by-nc-sa/3.0/88x31.png)](https://creativecommons.org/licenses/by-nc-sa/4.0)
