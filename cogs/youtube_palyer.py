@@ -20,6 +20,7 @@ class YotubePlayer(commands.Cog):
         self.forbidden_char = re.compile(r'[/\\:*?"\'<>|\.]')
         self.play_queue = []
         self.channel_id = []
+        self.text_channel_id = None
         self.pause_flag = False
         self.ffmpeg_path = os.getenv('FFMPEG_PATH')
         self.song_path = './music_tmp/'
@@ -48,6 +49,7 @@ class YotubePlayer(commands.Cog):
     @app_commands.describe(c_var='Class variable name.')
     @app_commands.choices(c_var=[
         app_commands.Choice(name='channel_id', value='channel_id'),
+        app_commands.Choice(name='text_channel_id', value='text_channel_id'),
         app_commands.Choice(name='volume', value='volume'),
         app_commands.Choice(name='get_details_options',
                             value='get_details_options'),
@@ -60,6 +62,8 @@ class YotubePlayer(commands.Cog):
         match c_var:
             case 'channel_id':
                 c_var_value = self.channel_id
+            case 'text_channel_id':
+                c_var_value = self.text_channel_id
             case 'volume':
                 c_var_value = self.volume
             case 'get_details_options':
@@ -91,6 +95,7 @@ class YotubePlayer(commands.Cog):
     ])
     async def play(self, interaction: discord.Interaction, notice: int, youtube_url: str, channel_id: str = '0') -> None:
         self.notice = bool(notice)
+        self.text_channel_id = interaction.channel
         await interaction.response.defer()
         youtube_url = self.url_format(youtube_url)
         if youtube_url == None:
@@ -145,13 +150,13 @@ class YotubePlayer(commands.Cog):
     async def after_song(self, interaction: discord.Interaction):
         self.play_queue.pop(0)
         if self.clean(self) == 1:
-            await self.bot.get_channel(self.channel_id[0]).send(embed=await youtube_palyer_output('正在嘗試重連...'))
+            await self.text_channel_id.send(embed=await youtube_palyer_output('正在嘗試重連...'))
             await asyncio.sleep(3)
         if len(self.bot.voice_clients) == 0:
             logger.warning('Reconnection failed, bot is ready to exit...')
             self.play_queue = []
             self.clean(self)
-            await self.bot.get_channel(self.channel_id[0]).send(embed=await youtube_palyer_output('機器人連線失敗，請稍後再使用'))
+            await self.text_channel_id.send(embed=await youtube_palyer_output('機器人連線失敗，請稍後再使用'))
             self.channel_id = []
             return
         if len(self.play_queue) > 0:
@@ -176,14 +181,14 @@ class YotubePlayer(commands.Cog):
                     interaction, error)
             )
             if self.notice:
-                await self.bot.get_channel(self.channel_id[0]).send(embed=await youtube_palyer_notice_output(self.play_queue[0]))
+                await self.text_channel_id.send(embed=await youtube_palyer_notice_output(self.play_queue[0]))
             await self.change_status(discord.Activity(
                 type=discord.ActivityType.listening, name=self.play_queue[0]['title']))
         else:
             await self.change_status(discord.Activity(
                 type=discord.ActivityType.watching, name='ご注文はうさぎですか？'))
             logger.success('已播放完歌曲')
-            await self.bot.get_channel(self.channel_id[0]).send(embed=await youtube_palyer_output('已播放完歌曲'))
+            await self.text_channel_id.send(embed=await youtube_palyer_output('已播放完歌曲'))
             self.channel_id = []
 
     @app_commands.command(name='skip', description='跳過歌曲')
@@ -319,8 +324,11 @@ class YotubePlayer(commands.Cog):
                 if len(self.bot.voice_clients) != 0:
                     # The song hasn’t finished playing yet
                     if len(self.play_queue) != 0:
-                        self.play_queue = [self.play_queue[0]]
-                        self.bot.voice_clients[0].stop()
+                        try:
+                            self.play_queue = [self.play_queue[0]]
+                            self.bot.voice_clients[0].stop()
+                        except:
+                            return True
                         await asyncio.sleep(1)  # Ensures the stop is complete
                     await self.bot.voice_clients[0].disconnect()
                     await self.change_status(discord.Activity(
