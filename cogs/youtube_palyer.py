@@ -9,7 +9,7 @@ from discord.ext import commands
 from dotenv import load_dotenv
 from loguru import logger
 
-from src.tools import error_output, youtube_palyer_output
+from src.tools import error_output, youtube_palyer_output, youtube_palyer_notice_output
 
 load_dotenv()
 
@@ -25,6 +25,7 @@ class YotubePlayer(commands.Cog):
         self.song_path = './music_tmp/'
         self.cookie_path = './cookies.txt'
         self.volume = 0.1
+        self.notice = False
         self.get_details_options = {
             'cookiefile': self.cookie_path,
             'extract_flat': True,  # dont download
@@ -82,7 +83,14 @@ class YotubePlayer(commands.Cog):
             await interaction.response.send_message(embed=await youtube_palyer_output('機器人未加入頻道'))
 
     @app_commands.command(name='play', description='播放YT音樂')
-    async def play(self, interaction: discord.Interaction, youtube_url: str, channel_id: str = '0') -> None:
+    @app_commands.describe(notice='song notice, if not entered, Bot doesn\'t notify when song changes',
+                           channel_id='Voice channel id, if not entered, the current channel will be used')
+    @app_commands.choices(notice=[
+        app_commands.Choice(name=False, value=0),
+        app_commands.Choice(name=True, value=1),
+    ])
+    async def play(self, interaction: discord.Interaction, notice: int, youtube_url: str, channel_id: str = '0') -> None:
+        self.notice = bool(notice)
         await interaction.response.defer()
         youtube_url = self.url_format(youtube_url)
         if youtube_url == None:
@@ -118,6 +126,8 @@ class YotubePlayer(commands.Cog):
                     source, after=lambda error: self.after_song_interface(
                         interaction, error)
                 )
+                if self.notice:
+                    await interaction.followup.send(embed=await youtube_palyer_notice_output(self.play_queue[0]))
                 await self.change_status(discord.Activity(
                     type=discord.ActivityType.listening, name=self.play_queue[0]['title']))
             else:
@@ -165,6 +175,8 @@ class YotubePlayer(commands.Cog):
                 source, after=lambda error: self.after_song_interface(
                     interaction, error)
             )
+            if self.notice:
+                await self.bot.get_channel(self.channel_id[0]).send(embed=await youtube_palyer_notice_output(self.play_queue[0]))
             await self.change_status(discord.Activity(
                 type=discord.ActivityType.listening, name=self.play_queue[0]['title']))
         else:
