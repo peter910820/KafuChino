@@ -21,7 +21,7 @@ async def youtube_palyer_output(youtube_palyer_message):
 
 async def youtube_palyer_notice_output(song_data):
     embed = discord.Embed(
-        title='YT-PLAYER', description=f'現在正在播放{song_data["title"]}', color=discord.colour.Colour.red())
+        title='YT-PLAYER', description=f'現在正在播放: {song_data["title"]}', color=discord.colour.Colour.red())
     try:
         embed.set_thumbnail(
             url=song_data['thumbnails'][0]['url'])
