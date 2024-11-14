@@ -35,7 +35,7 @@ python main.py
 nohup python main.py &
 ```  
 > [TODO]  
-> - [ ] 更改YT-PLAYER顯示時的圖片為當前歌曲
-> - [ ] 讓機器人個人狀態可以根據當前的歌曲改變
+> - [X] 更改YT-PLAYER顯示時的圖片為當前歌曲
+> - [X] 讓機器人個人狀態可以根據當前的歌曲改變
 
 [![licensebuttons by-nc-sa](https://licensebuttons.net/l/by-nc-sa/3.0/88x31.png)](https://creativecommons.org/licenses/by-nc-sa/4.0)
