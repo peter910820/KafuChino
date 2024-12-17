@@ -22,7 +22,10 @@ class KafuChino(commands.Bot):
     async def setup_hook(self):
         # This feature to slash command has an error
         # await self.load_extension('cogs.manage')
-        await self.load_extension('cogs.event_listener')
+
+        # This is a event_listener listen on_voice_state_update
+        # await self.load_extension('cogs.event_listener')
+
         await self.load_extension('cogs.general')
         await self.load_extension('cogs.owner')
         await self.load_extension('cogs.youtube_palyer')
