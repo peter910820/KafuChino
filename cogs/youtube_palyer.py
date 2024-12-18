@@ -203,7 +203,7 @@ class YotubePlayer(commands.Cog):
         if len(self.play_queue) != 0:
             self.bot.voice_clients[0].stop()
         else:
-            await interaction.followup.send('我還沒加入語音頻道呦')
+            await interaction.followup.send(embed=await youtube_palyer_output('我還沒加入語音頻道呦'))
             return
         await interaction.followup.send(embed=await youtube_palyer_output('歌曲已跳過'))
 
