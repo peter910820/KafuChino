@@ -302,7 +302,7 @@ class YotubePlayer(commands.Cog):
                     logger.error('請輸入正確的channel_id!')
                     return False
                 if len(self.bot.voice_clients) == 0:
-                    if interaction.user.voice != None:
+                    if interaction.user.voice != None or channel_id != 0:
                         if channel_id == 0:
                             voice_channel = interaction.user.voice.channel
                         else:
