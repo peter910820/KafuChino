@@ -29,47 +29,6 @@ class Owner(commands.Cog):
             logger.error(e)
             await interaction.response.send_message(embed=await error_output(e))
 
-    @app_commands.command(name='change_presence', description='change bot presence(owner only)')
-    @app_commands.describe(status='The status for bot.')
-    @app_commands.choices(status=[
-        app_commands.Choice(name='playing', value='playing'),
-        app_commands.Choice(name='streaming', value='streaming'),
-        app_commands.Choice(name='listening', value='listening'),
-        app_commands.Choice(name='watching', value='watching'),
-        app_commands.Choice(name='custom', value='custom'),
-        app_commands.Choice(name='competing', value='competing'),
-    ])
-    async def change_presence(self, interaction: discord.Interaction, status: str, name: str):
-        if not await self.check_owner(interaction):
-            await interaction.response.send_message('Only bot owner can use this command!', ephemeral=True)
-            return
-        try:
-            match status:
-                case 'playing':
-                    act = discord.Activity(
-                        type=discord.ActivityType.playing, name=name)
-                case 'streaming':
-                    act = discord.Activity(
-                        type=discord.ActivityType.streaming, name=name)
-                case 'listening':
-                    act = discord.Activity(
-                        type=discord.ActivityType.listening, name=name)
-                case 'watching':
-                    act = discord.Activity(
-                        type=discord.ActivityType.watching, name=name)
-                case 'custom':
-                    act = discord.Activity(
-                        type=discord.ActivityType.custom, name=name)
-                case 'competing':
-                    act = discord.Activity(
-                        type=discord.ActivityType.competing, name=name)
-            await self.bot.change_presence(activity=act, status=discord.Status.online)
-            await interaction.response.send_message(embed=await owner_output('更改機器人狀況成功!'), ephemeral=True)
-            # TODO add other optional
-        except Exception as e:
-            logger.error(e)
-            await interaction.response.send_message(embed=await error_output(e))
-
 
 async def setup(bot: commands.Bot) -> None:
     await bot.add_cog(Owner(bot), guild=None)
