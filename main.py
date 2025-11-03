@@ -28,7 +28,7 @@ class KafuChino(commands.Bot):
 
         await self.load_extension('cogs.general')
         await self.load_extension('cogs.owner')
-        await self.load_extension('cogs.youtube_player')
+        await self.load_extension('cogs.youtube_player_V2')
         await bot.tree.sync(guild=None)
 
     async def on_ready(self):
@@ -41,4 +41,6 @@ class KafuChino(commands.Bot):
 
 
 bot = KafuChino()
-bot.run(os.getenv('BOT_TOKEN'))
+token = os.getenv('BOT_TOKEN')
+if token != None:
+    bot.run(token)
