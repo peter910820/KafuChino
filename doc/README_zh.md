@@ -39,3 +39,6 @@ nohup python main.py &
 > - [X] 讓機器人個人狀態可以根據當前的歌曲改變
 
 [![licensebuttons by-nc-sa](https://licensebuttons.net/l/by-nc-sa/3.0/88x31.png)](https://creativecommons.org/licenses/by-nc-sa/4.0)
+
+>[!NOTICE]
+> 2025/11/03: 不知道哪個API更新後現在載歌的部分又無法正常工作了，有空會更新，現在先放置。

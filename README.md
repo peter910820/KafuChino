@@ -39,3 +39,6 @@ nohup python main.py &
 > - [X] change presence when music change  
 
 [![licensebuttons by-nc-sa](https://licensebuttons.net/l/by-nc-sa/3.0/88x31.png)](https://creativecommons.org/licenses/by-nc-sa/4.0)
+
+>[!NOTICE]
+>2025/11/03: I don't know which API was updated, but now the song loading part is not working properly again. I will update it when I have time, but I will leave it for now.
