@@ -1,5 +1,8 @@
 # KafuChino
 
+>[!NOTICE]
+>2026/09/22: 今日已與 KirimaSyaro（專案前身）進行合併，因此 Git 歷史紀錄可能有所調整。
+
 [![made-with-python](https://img.shields.io/badge/Made%20with-Python-1f425f.svg)](https://www.python.org/)
 [![Static Badge](https://img.shields.io/badge/python-3.10%2B-blue)](https://www.python.org/downloads/release/python-3100/)
 [![Discord](https://badgen.net/badge/icon/discord?icon=discord&label)](https://https://discord.com/)

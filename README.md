@@ -1,5 +1,8 @@
 # KafuChino
 
+>[!NOTICE]
+>2026/09/22: This project has been merged with KirimaSyaro (predecessor project). Git history may have been rewritten or adjusted as a result.
+
 [![made-with-python](https://img.shields.io/badge/Made%20with-Python-1f425f.svg)](https://www.python.org/)
 [![Static Badge](https://img.shields.io/badge/python-3.10%2B-blue)](https://www.python.org/downloads/release/python-3100/)
 [![Discord](https://badgen.net/badge/icon/discord?icon=discord&label)](https://https://discord.com/)
