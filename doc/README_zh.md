@@ -21,7 +21,7 @@
 
 [NikaidoShinku](https://github.com/peter910820/NikaidoShinku) 
 
-[KirimaSharo](https://github.com/peter910820/KirimaSharo) 
+KirimaSharo  
 
 ## 下載 & 使用 
 ```bash

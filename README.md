@@ -21,7 +21,7 @@ This project is a music bot for discord, evolved from previous versions:
 
 [NikaidoShinku](https://github.com/peter910820/NikaidoShinku) 
 
-[KirimaSharo](https://github.com/peter910820/KirimaSharo) 
+KirimaSharo  
 
 ## Installation & Use 
 ```bash
